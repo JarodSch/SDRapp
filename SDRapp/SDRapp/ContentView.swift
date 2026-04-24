@@ -18,6 +18,8 @@ struct ContentView: View {
             SpectrumContainerView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .ignoresSafeArea()
+        .background(WindowConfigurator())
         .background(Theme.bgDeep)
         .onAppear {
             appState.refreshDevices()

@@ -5,6 +5,9 @@ struct SidebarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // Platz für Traffic Lights (transparente Titelleiste)
+            Color.clear.frame(height: 28)
+
             // Header
             HStack {
                 Text("SDRapp")
