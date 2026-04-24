@@ -1,0 +1,38 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Xcode
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Rust
+target/
+Cargo.lock
+
+# Swift Package Manager
+.build/
+*.resolved
+
+# Superpowers Visual Companion
+.superpowers/
+
+# Secrets
+*.env
+*.pem
