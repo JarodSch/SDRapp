@@ -6,7 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A524B8582F9B8FA00098F0C8 /* libsdrapp_core.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A524B8572F9B8FA00098F0C8 /* libsdrapp_core.a */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		A524B8542F9B8EEA0098F0C8 /* SDRapp-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SDRapp-Bridging-Header.h"; sourceTree = "<group>"; };
+		A524B8572F9B8FA00098F0C8 /* libsdrapp_core.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsdrapp_core.a; path = Application/libsdrapp_core.a; sourceTree = "<group>"; };
 		A538B4042F9B8CF0002BD684 /* SDRapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SDRapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -23,16 +29,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A524B8582F9B8FA00098F0C8 /* libsdrapp_core.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A524B8562F9B8FA00098F0C8 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A524B8572F9B8FA00098F0C8 /* libsdrapp_core.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		A538B3FB2F9B8CF0002BD684 = {
 			isa = PBXGroup;
 			children = (
+				A524B8542F9B8EEA0098F0C8 /* SDRapp-Bridging-Header.h */,
 				A538B4062F9B8CF0002BD684 /* SDRapp */,
+				A524B8562F9B8FA00098F0C8 /* Frameworks */,
 				A538B4052F9B8CF0002BD684 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -128,10 +145,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(SRCROOT)/Application/libsdrapp_core.a",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "";
+			shellScript = "export PATH=\"$HOME/.cargo/bin:$PATH\"\ncd \"$SRCROOT/../sdrapp-core\"\ncargo build --release\ncp target/release/libsdrapp_core.a \"$SRCROOT/Application/\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -274,6 +292,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -281,7 +300,19 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Application",
+					/opt/homebrew/lib,
+				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lSoapySDR",
+					"-framework",
+					CoreAudio,
+					"-framework",
+					AudioToolbox,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = me.jarod.SDRapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -289,6 +320,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/SDRapp-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -304,6 +336,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -311,7 +344,19 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/Application",
+					/opt/homebrew/lib,
+				);
 				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-lSoapySDR",
+					"-framework",
+					CoreAudio,
+					"-framework",
+					AudioToolbox,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = me.jarod.SDRapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -319,6 +364,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "$(SRCROOT)/SDRapp-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
