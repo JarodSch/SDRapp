@@ -39,3 +39,4 @@ target/
 # Secrets
 *.env
 *.pem
+.superpowers/
