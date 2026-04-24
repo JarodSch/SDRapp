@@ -8,6 +8,15 @@ pub struct DeviceInfo {
     pub driver: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct GainElementInfo {
+    pub name: String,
+    pub min_db: f64,
+    pub max_db: f64,
+    pub step_db: f64,
+    pub current_db: f64,
+}
+
 pub struct SdrDevice {
     device: soapysdr::Device,
     sample_rate: f64,
@@ -51,6 +60,30 @@ impl SdrDevice {
 
     /// Gibt das innere soapysdr::Device zurück (für Live-Tuning).
     pub fn into_inner(self) -> soapysdr::Device { self.device }
+
+    /// Listet alle Gain-Elemente mit ihren Wertebereichen und aktuellen Werten.
+    pub fn list_gain_elements(&self) -> Vec<GainElementInfo> {
+        let names = match self.device.list_gains(Rx, 0) {
+            Ok(n) => n,
+            Err(_) => return vec![],
+        };
+        names.into_iter().map(|name| {
+            let range = self.device.gain_element_range(Rx, 0, name.as_bytes()).unwrap_or(soapysdr::Range { minimum: 0.0, maximum: 0.0, step: 1.0 });
+            let current = self.device.gain_element(Rx, 0, name.as_bytes()).unwrap_or(0.0);
+            GainElementInfo {
+                name,
+                min_db: range.minimum,
+                max_db: range.maximum,
+                step_db: if range.step > 0.0 { range.step } else { 1.0 },
+                current_db: current,
+            }
+        }).collect()
+    }
+
+    /// Setzt ein einzelnes Gain-Element direkt auf dem Gerät.
+    pub fn set_gain_element(&self, name: &str, db: f64) -> Result<(), soapysdr::Error> {
+        self.device.set_gain_element(Rx, 0, name.as_bytes(), db)
+    }
 
     /// Erstellt einen RX-Stream für IQ-Samples.
     pub fn rx_stream(&self) -> Result<soapysdr::RxStream<Complex<f32>>, soapysdr::Error> {

@@ -7,7 +7,7 @@ mod pipeline;
 pub use pipeline::SdrappCore;
 pub use fft::FFT_SIZE;
 pub use demod::DemodMode;
-use crate::device::DeviceInfo;
+use crate::device::{DeviceInfo, GainElementInfo};
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
@@ -81,6 +81,68 @@ pub unsafe extern "C" fn sdrapp_get_fft(
     if ptr.is_null() || out_buf.is_null() { return 0; }
     let buf = std::slice::from_raw_parts_mut(out_buf, out_len);
     (*ptr).get_fft(buf)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn sdrapp_set_gain_element(
+    ptr: *mut SdrappCore,
+    name: *const c_char,
+    db: f64,
+) {
+    if ptr.is_null() || name.is_null() { return; }
+    let name_str = CStr::from_ptr(name).to_string_lossy();
+    (*ptr).set_gain_element(&name_str, db);
+}
+
+#[repr(C)]
+pub struct GainElementC {
+    pub name: *mut c_char,
+    pub min_db: f64,
+    pub max_db: f64,
+    pub step_db: f64,
+    pub current_db: f64,
+}
+
+#[repr(C)]
+pub struct GainListC {
+    pub count: usize,
+    pub items: *mut GainElementC,
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn sdrapp_list_gains(
+    ptr: *const SdrappCore,
+    out_count: *mut usize,
+) -> *mut GainListC {
+    if ptr.is_null() { return std::ptr::null_mut(); }
+    let elements: Vec<GainElementInfo> = (*ptr).list_gain_elements();
+    let count = elements.len();
+    if !out_count.is_null() { *out_count = count; }
+
+    let mut items: Vec<GainElementC> = elements.into_iter().map(|e| GainElementC {
+        name: CString::new(e.name).unwrap_or_default().into_raw(),
+        min_db: e.min_db,
+        max_db: e.max_db,
+        step_db: e.step_db,
+        current_db: e.current_db,
+    }).collect();
+    items.shrink_to_fit();
+    let items_ptr = items.as_mut_ptr();
+    std::mem::forget(items);
+
+    Box::into_raw(Box::new(GainListC { count, items: items_ptr }))
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn sdrapp_free_gain_list(ptr: *mut GainListC) {
+    if ptr.is_null() { return; }
+    let list = Box::from_raw(ptr);
+    if !list.items.is_null() {
+        let items = Vec::from_raw_parts(list.items, list.count, list.count);
+        for item in &items {
+            if !item.name.is_null() { drop(CString::from_raw(item.name)); }
+        }
+    }
 }
 
 /// Gibt Anzahl angeschlossener Geräte zurück.

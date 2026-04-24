@@ -1,10 +1,11 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use num_complex::Complex;
 use ringbuf::{traits::*, HeapRb};
 use soapysdr::Direction::Rx;
 
-use crate::device::{DeviceInfo, SdrDevice};
+use crate::device::{DeviceInfo, GainElementInfo, SdrDevice};
 use crate::fft::{FftProcessor, FFT_SIZE};
 use crate::demod::{Demodulator, DemodMode};
 use crate::audio::AudioOutput;
@@ -25,6 +26,7 @@ pub struct SdrappCore {
     device_args: Option<String>,
     frequency_hz: u64,
     gain_db: f64,
+    gain_elements: HashMap<String, f64>,
     demod_mode: DemodMode,
 }
 
@@ -39,6 +41,7 @@ impl SdrappCore {
             device_args: None,
             frequency_hz: 100_000_000, // 100 MHz
             gain_db: 30.0,
+            gain_elements: HashMap::new(),
             demod_mode: DemodMode::Wbfm,
         }
     }
@@ -63,10 +66,50 @@ impl SdrappCore {
 
     pub fn set_gain(&mut self, db: f64) {
         self.gain_db = db;
-        // Live-Tuning: Gain direkt am laufenden Gerät setzen
         if let Ok(guard) = self.live_device.lock() {
             if let Some(dev) = guard.as_ref() {
                 let _ = dev.set_gain(Rx, 0, db);
+            }
+        }
+    }
+
+    /// Listet Gain-Elemente des ausgewählten Geräts (öffnet kurz und schließt wieder).
+    pub fn list_gain_elements(&self) -> Vec<GainElementInfo> {
+        let args = match &self.device_args {
+            Some(a) => a.clone(),
+            None => return vec![],
+        };
+        // Falls Gerät läuft, direkt aus live_device lesen
+        if let Ok(guard) = self.live_device.lock() {
+            if let Some(dev) = guard.as_ref() {
+                let names = dev.list_gains(Rx, 0).unwrap_or_default();
+                return names.into_iter().map(|name| {
+                    let range = dev.gain_element_range(Rx, 0, name.as_bytes())
+                        .unwrap_or(soapysdr::Range { minimum: 0.0, maximum: 0.0, step: 1.0 });
+                    let current = dev.gain_element(Rx, 0, name.as_bytes()).unwrap_or(0.0);
+                    GainElementInfo {
+                        name,
+                        min_db: range.minimum,
+                        max_db: range.maximum,
+                        step_db: if range.step > 0.0 { range.step } else { 1.0 },
+                        current_db: current,
+                    }
+                }).collect();
+            }
+        }
+        // Gerät kurz öffnen nur zum Abfragen
+        match SdrDevice::open(&args) {
+            Ok(d) => d.list_gain_elements(),
+            Err(_) => vec![],
+        }
+    }
+
+    /// Setzt ein einzelnes Gain-Element live und speichert für nächsten Start.
+    pub fn set_gain_element(&mut self, name: &str, db: f64) {
+        self.gain_elements.insert(name.to_string(), db);
+        if let Ok(guard) = self.live_device.lock() {
+            if let Some(dev) = guard.as_ref() {
+                let _ = dev.set_gain_element(Rx, 0, name.as_bytes(), db);
             }
         }
     }
@@ -102,6 +145,10 @@ impl SdrappCore {
         if let Err(e) = device.configure(self.frequency_hz, self.gain_db, SAMPLE_RATE) {
             eprintln!("Gerät konfigurieren fehlgeschlagen: {}", e);
             return false;
+        }
+        // Per-Element-Gains überschreiben falls gesetzt
+        for (name, &db) in &self.gain_elements {
+            let _ = device.set_gain_element(name, db);
         }
 
         let rx_stream = match device.rx_stream() {

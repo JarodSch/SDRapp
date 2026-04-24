@@ -10,6 +10,19 @@
 
 typedef struct SdrappCore SdrappCore;
 
+typedef struct GainElementC {
+  char *name;
+  double min_db;
+  double max_db;
+  double step_db;
+  double current_db;
+} GainElementC;
+
+typedef struct GainListC {
+  uintptr_t count;
+  struct GainElementC *items;
+} GainListC;
+
 typedef struct DeviceItemC {
   char *label;
   char *args;
@@ -41,6 +54,12 @@ void sdrapp_stop(struct SdrappCore *ptr);
  * out_len muss >= 1024 sein.
  */
 uintptr_t sdrapp_get_fft(const struct SdrappCore *ptr, float *out_buf, uintptr_t out_len);
+
+void sdrapp_set_gain_element(struct SdrappCore *ptr, const char *name, double db);
+
+struct GainListC *sdrapp_list_gains(const struct SdrappCore *ptr, uintptr_t *out_count);
+
+void sdrapp_free_gain_list(struct GainListC *ptr);
 
 /**
  * Gibt Anzahl angeschlossener Geräte zurück.

@@ -21,7 +21,7 @@ struct DevicePickerView: View {
             } else {
                 Picker("", selection: Binding(
                     get: { appState.selectedDeviceArgs },
-                    set: { appState.selectedDeviceArgs = $0 }
+                    set: { appState.selectDevice($0) }
                 )) {
                     Text("AUSWÄHLEN…").tag(String?.none)
                     ForEach(appState.availableDevices) { device in

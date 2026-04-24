@@ -1,5 +1,14 @@
 import Foundation
 
+struct GainElement: Identifiable {
+    let id = UUID()
+    let name: String
+    let minDb: Double
+    let maxDb: Double
+    let stepDb: Double
+    var currentDb: Double
+}
+
 enum DemodMode: UInt32 {
     case am = 0
     case wbfm = 1
@@ -49,6 +58,27 @@ final class SDRCore {
 
     func setGain(_ db: Double) {
         sdrapp_set_gain(ptr, db)
+    }
+
+    func setGainElement(_ name: String, _ db: Double) {
+        sdrapp_set_gain_element(ptr, name, db)
+    }
+
+    func listGainElements() -> [GainElement] {
+        var count: UInt = 0
+        guard let listPtr = sdrapp_list_gains(ptr, &count) else { return [] }
+        defer { sdrapp_free_gain_list(listPtr) }
+        guard let itemsPtr = listPtr.pointee.items else { return [] }
+        return (0..<Int(count)).map { i in
+            let item = itemsPtr[i]
+            return GainElement(
+                name:      item.name.map { String(cString: $0) } ?? "",
+                minDb:     item.min_db,
+                maxDb:     item.max_db,
+                stepDb:    item.step_db,
+                currentDb: item.current_db
+            )
+        }
     }
 
     func setDemod(_ mode: DemodMode) {
