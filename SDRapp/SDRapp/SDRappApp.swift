@@ -16,6 +16,7 @@ struct SDRappApp: App {
             ContentView()
                 .environment(appState)
                 .frame(minWidth: 900, minHeight: 600)
+                .preferredColorScheme(.dark)
         }
         .windowStyle(.titleBar)
         .commands {
