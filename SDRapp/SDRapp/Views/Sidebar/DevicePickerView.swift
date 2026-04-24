@@ -50,12 +50,12 @@ struct DevicePickerView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 5)
                 .foregroundStyle(Theme.oliveMuted)
+                .background(Color.clear)
+                .contentShape(Rectangle())
                 .overlay(
                     RoundedRectangle(cornerRadius: 2)
                         .stroke(Theme.border, lineWidth: 1)
                 )
-                .cornerRadius(2)
-                .contentShape(Rectangle())
         }
     }
 }
