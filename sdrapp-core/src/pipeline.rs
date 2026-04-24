@@ -74,6 +74,10 @@ impl SdrappCore {
     /// The DSP thread (ring buffer → FFT → demod → audio) is implemented.
     /// Actual hardware reading is completed in Task 15.
     pub fn start(&mut self) -> bool {
+        if self.state.lock().unwrap().is_running {
+            return false; // bereits aktiv
+        }
+
         let device_args = match &self.device_args {
             Some(a) => a.clone(),
             None => return false,
@@ -96,6 +100,12 @@ impl SdrappCore {
         let state = Arc::clone(&self.state);
         let demod_mode = self.demod_mode;
 
+        // is_running VOR Spawn setzen damit der Thread beim ersten Check true liest
+        {
+            let mut state_guard = self.state.lock().unwrap();
+            state_guard.is_running = true;
+        }
+
         // DSP-Thread: liest IQ aus Ring Buffer, rechnet FFT + Demod
         thread::spawn(move || {
             let mut fft = FftProcessor::new();
@@ -106,6 +116,7 @@ impl SdrappCore {
             };
             let mut buf = vec![Complex::default(); FFT_SIZE];
             let mut fft_out = vec![0.0f32; FFT_SIZE];
+            let mut audio_buf: Vec<f32> = Vec::with_capacity(FFT_SIZE);
 
             loop {
                 {
@@ -129,15 +140,10 @@ impl SdrappCore {
                     s.fft_data.copy_from_slice(&fft_out);
                 }
 
-                let audio_samples = demod.process(&buf);
-                audio.push_samples(&audio_samples);
+                demod.process_into(&buf, &mut audio_buf);
+                audio.push_samples(&audio_buf);
             }
         });
-
-        {
-            let mut state_guard = self.state.lock().unwrap();
-            state_guard.is_running = true;
-        }
 
         true
     }
