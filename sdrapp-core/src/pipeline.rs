@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::thread;
 use num_complex::Complex;
-use ringbuf::{traits::*, HeapProd, HeapRb};
+use ringbuf::{traits::*, HeapRb};
 
 use crate::device::{DeviceInfo, SdrDevice};
 use crate::fft::{FftProcessor, FFT_SIZE};
@@ -19,7 +19,6 @@ struct SharedState {
 
 pub struct SdrappCore {
     state: Arc<Mutex<SharedState>>,
-    iq_producer: Option<HeapProd<Complex<f32>>>,
     device_args: Option<String>,
     frequency_hz: u64,
     gain_db: f64,
@@ -33,7 +32,6 @@ impl SdrappCore {
                 fft_data: [-120.0; FFT_SIZE],
                 is_running: false,
             })),
-            iq_producer: None,
             device_args: None,
             frequency_hz: 100_000_000, // 100 MHz
             gain_db: 30.0,
@@ -69,10 +67,7 @@ impl SdrappCore {
         len
     }
 
-    /// Startet Empfänger- und DSP-Thread.
-    /// Note: The receiver thread (SoapySDR → ring buffer) is a Phase 1 stub.
-    /// The DSP thread (ring buffer → FFT → demod → audio) is implemented.
-    /// Actual hardware reading is completed in Task 15.
+    /// Startet Empfänger-Thread (SoapySDR → Ring Buffer) und DSP-Thread (FFT + Demod → Audio).
     pub fn start(&mut self) -> bool {
         if self.state.lock().unwrap().is_running {
             return false; // bereits aktiv
@@ -93,9 +88,13 @@ impl SdrappCore {
             return false;
         }
 
+        let rx_stream = match device.rx_stream() {
+            Ok(s) => s,
+            Err(e) => { eprintln!("RX-Stream öffnen fehlgeschlagen: {}", e); return false; }
+        };
+
         let rb = HeapRb::<Complex<f32>>::new(SAMPLE_RATE as usize); // 1s Buffer
-        let (iq_producer, mut iq_consumer) = rb.split();
-        self.iq_producer = Some(iq_producer);
+        let (mut iq_producer_rx, mut iq_consumer) = rb.split();
 
         let state = Arc::clone(&self.state);
         let demod_mode = self.demod_mode;
@@ -105,6 +104,33 @@ impl SdrappCore {
             let mut state_guard = self.state.lock().unwrap();
             state_guard.is_running = true;
         }
+
+        let state_rx = Arc::clone(&self.state);
+
+        // Empfänger-Thread: SoapySDR → Ring Buffer
+        thread::spawn(move || {
+            let _device = device; // hält Device am Leben (und damit Stream)
+            let mut rx_stream = rx_stream;
+            if let Err(e) = rx_stream.activate(None) {
+                eprintln!("Stream aktivieren fehlgeschlagen: {}", e);
+                return;
+            }
+            let mut buf = vec![Complex::default(); 8192];
+            loop {
+                {
+                    if !state_rx.lock().unwrap().is_running { break; }
+                }
+                match rx_stream.read(&mut [&mut buf], 100_000) {
+                    Ok(len) => {
+                        for &s in &buf[..len] {
+                            let _ = iq_producer_rx.try_push(s);
+                        }
+                    }
+                    Err(e) => eprintln!("Read-Fehler: {}", e),
+                }
+            }
+            let _ = rx_stream.deactivate(None);
+        });
 
         // DSP-Thread: liest IQ aus Ring Buffer, rechnet FFT + Demod
         thread::spawn(move || {
@@ -151,7 +177,6 @@ impl SdrappCore {
     pub fn stop(&mut self) {
         let mut state = self.state.lock().unwrap();
         state.is_running = false;
-        self.iq_producer = None;
     }
 }
 
