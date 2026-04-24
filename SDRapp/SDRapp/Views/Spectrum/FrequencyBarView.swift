@@ -6,57 +6,72 @@ struct FrequencyBarView: View {
     @State private var isEditing: Bool = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            // Frequenz-Anzeige / Eingabe
+        HStack(spacing: 14) {
             if isEditing {
                 TextField("MHz", text: $inputText)
-                    .font(.system(.title3, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .font(Theme.mono(20, weight: .bold))
+                    .foregroundStyle(Theme.amber)
                     .textFieldStyle(.plain)
                     .onSubmit { commitFrequency() }
                     .onExitCommand { isEditing = false }
             } else {
-                Text(formatFrequency(appState.frequencyHz))
-                    .font(.system(.title3, design: .monospaced))
-                    .foregroundStyle(.white)
-                    .onTapGesture {
-                        inputText = String(format: "%.4f", Double(appState.frequencyHz) / 1e6)
-                        isEditing = true
-                    }
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    Text(formatMHz(appState.frequencyHz))
+                        .font(Theme.mono(20, weight: .bold))
+                        .foregroundStyle(Theme.amber)
+                        .tracking(2)
+                    Text("MHz")
+                        .font(Theme.mono(12))
+                        .foregroundStyle(Theme.olive)
+                }
+                .onTapGesture {
+                    inputText = String(format: "%.4f", Double(appState.frequencyHz) / 1e6)
+                    isEditing = true
+                }
             }
 
             Spacer()
 
-            // Modus-Anzeige
             Text(appState.demodMode == .wbfm ? "WBFM" : "AM")
-                .font(.caption)
+                .font(Theme.mono(10, weight: .bold))
+                .tracking(1)
                 .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.blue.opacity(0.3))
-                .cornerRadius(4)
-                .foregroundStyle(.blue)
+                .padding(.vertical, 3)
+                .background(Theme.amber.opacity(0.13))
+                .foregroundStyle(Theme.amber)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 2)
+                        .stroke(Theme.amber.opacity(0.4), lineWidth: 1)
+                )
+                .cornerRadius(2)
 
-            // Status
             Circle()
-                .fill(appState.isRunning ? Color.green : Color.gray)
+                .fill(appState.isRunning ? Theme.statusActive : Theme.oliveMuted)
                 .frame(width: 8, height: 8)
+                .shadow(color: appState.isRunning ? Theme.statusActive.opacity(0.6) : .clear,
+                        radius: 4)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 16)
         .frame(height: 44)
-        .background(Color(red: 0.08, green: 0.08, blue: 0.12))
+        .background(Theme.bgSubtle)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(Theme.borderSubtle)
+                .frame(height: 1)
+        }
     }
 
     private func commitFrequency() {
         if let mhz = Double(inputText.replacingOccurrences(of: ",", with: ".")) {
             let hz = UInt64(mhz * 1_000_000)
-            if hz >= 1_000 && hz <= 6_000_000_000 {  // 1 kHz bis 6 GHz
+            if hz >= 1_000 && hz <= 6_000_000_000 {
                 appState.tuneFrequency(hz)
             }
         }
         isEditing = false
     }
 
-    private func formatFrequency(_ hz: UInt64) -> String {
-        String(format: "%.4f MHz", Double(hz) / 1_000_000.0)
+    private func formatMHz(_ hz: UInt64) -> String {
+        String(format: "%.4f", Double(hz) / 1_000_000.0)
     }
 }
