@@ -1,5 +1,7 @@
 # SDRapp
 
+> **Vibe Coded** — This application was built entirely through AI-assisted vibe coding.
+
 A modern macOS SDR (Software Defined Radio) application built with a Rust DSP core and a native SwiftUI interface.
 
 ![Platform](https://img.shields.io/badge/platform-macOS-lightgrey)
