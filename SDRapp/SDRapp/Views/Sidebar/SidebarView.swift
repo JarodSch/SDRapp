@@ -95,22 +95,24 @@ struct SidebarView: View {
     @ViewBuilder
     private func startStopButton() -> some View {
         let running = appState.isRunning
-        Button(running ? "■  STOPP" : "▶  START") {
+        Button {
             if running { appState.stopReceiving() } else { appState.startReceiving() }
+        } label: {
+            Text(running ? "■  STOPP" : "▶  START")
+                .font(Theme.mono(11, weight: .bold))
+                .tracking(3)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .foregroundStyle(running ? Theme.bgDeep : Theme.amber)
+                .background(running ? Theme.amber : Color.clear)
+                .cornerRadius(2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 2)
+                        .stroke(Theme.amber, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .font(Theme.mono(11, weight: .bold))
-        .tracking(3)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 9)
-        .foregroundStyle(running ? Theme.bgDeep : Theme.amber)
-        .background(running ? Theme.amber : Color.clear)
-        .cornerRadius(2)
-        .overlay(
-            RoundedRectangle(cornerRadius: 2)
-                .stroke(Theme.amber, lineWidth: 1)
-        )
-        .contentShape(Rectangle())
         .disabled(appState.selectedDeviceArgs == nil && !running)
     }
 

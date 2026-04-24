@@ -13,19 +13,21 @@ struct ModePickerView: View {
     @ViewBuilder
     private func modeButton(_ mode: DemodMode, label: String) -> some View {
         let active = appState.demodMode == mode
-        Button(label) { appState.changeDemod(mode) }
-            .buttonStyle(.plain)
-            .font(Theme.mono(10, weight: .bold))
-            .tracking(1)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
-            .background(active ? Theme.amber : Theme.bgRaised)
-            .foregroundStyle(active ? Theme.bgDeep : Theme.olive)
-            .cornerRadius(2)
-            .overlay(
-                RoundedRectangle(cornerRadius: 2)
-                    .stroke(active ? Theme.amber : Theme.border, lineWidth: 1)
-            )
-            .contentShape(Rectangle())
+        Button { appState.changeDemod(mode) } label: {
+            Text(label)
+                .font(Theme.mono(10, weight: .bold))
+                .tracking(1)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+                .background(active ? Theme.amber : Theme.bgRaised)
+                .foregroundStyle(active ? Theme.bgDeep : Theme.olive)
+                .cornerRadius(2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 2)
+                        .stroke(active ? Theme.amber : Theme.border, lineWidth: 1)
+                )
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 }

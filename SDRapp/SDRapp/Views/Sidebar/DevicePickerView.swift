@@ -43,19 +43,23 @@ struct DevicePickerView: View {
                 )
             }
 
-            Button("⟳  AKTUALISIEREN") { appState.refreshDevices() }
-                .buttonStyle(.plain)
-                .font(Theme.mono(9, weight: .bold))
-                .tracking(1)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 5)
-                .foregroundStyle(Theme.oliveMuted)
-                .background(Color.clear)
-                .contentShape(Rectangle())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 2)
-                        .stroke(Theme.border, lineWidth: 1)
-                )
+            Button {
+                appState.refreshDevices()
+            } label: {
+                Text("⟳  AKTUALISIEREN")
+                    .font(Theme.mono(9, weight: .bold))
+                    .tracking(1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 5)
+                    .foregroundStyle(Theme.oliveMuted)
+                    .background(Color.clear)
+                    .contentShape(Rectangle())
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 2)
+                            .stroke(Theme.border, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
         }
     }
 }
