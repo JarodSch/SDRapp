@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use num_complex::Complex;
 use ringbuf::{traits::*, HeapRb};
+use soapysdr::Direction::Rx;
 
 use crate::device::{DeviceInfo, SdrDevice};
 use crate::fft::{FftProcessor, FFT_SIZE};
@@ -19,6 +20,8 @@ struct SharedState {
 
 pub struct SdrappCore {
     state: Arc<Mutex<SharedState>>,
+    /// Geteilter Zugriff auf das laufende SoapySDR-Gerät für Live-Tuning
+    live_device: Arc<Mutex<Option<soapysdr::Device>>>,
     device_args: Option<String>,
     frequency_hz: u64,
     gain_db: f64,
@@ -32,6 +35,7 @@ impl SdrappCore {
                 fft_data: [-120.0; FFT_SIZE],
                 is_running: false,
             })),
+            live_device: Arc::new(Mutex::new(None)),
             device_args: None,
             frequency_hz: 100_000_000, // 100 MHz
             gain_db: 30.0,
@@ -49,10 +53,22 @@ impl SdrappCore {
 
     pub fn set_frequency(&mut self, hz: u64) {
         self.frequency_hz = hz;
+        // Live-Tuning: Frequenz direkt am laufenden Gerät setzen
+        if let Ok(guard) = self.live_device.lock() {
+            if let Some(dev) = guard.as_ref() {
+                let _ = dev.set_frequency(Rx, 0, hz as f64, ());
+            }
+        }
     }
 
     pub fn set_gain(&mut self, db: f64) {
         self.gain_db = db;
+        // Live-Tuning: Gain direkt am laufenden Gerät setzen
+        if let Ok(guard) = self.live_device.lock() {
+            if let Some(dev) = guard.as_ref() {
+                let _ = dev.set_gain(Rx, 0, db);
+            }
+        }
     }
 
     pub fn set_demod(&mut self, mode: DemodMode) {
@@ -93,6 +109,12 @@ impl SdrappCore {
             Err(e) => { eprintln!("RX-Stream öffnen fehlgeschlagen: {}", e); return false; }
         };
 
+        // Gerät im shared Arc speichern für Live-Tuning
+        {
+            let mut ld = self.live_device.lock().unwrap();
+            *ld = Some(device.into_inner());
+        }
+
         let rb = HeapRb::<Complex<f32>>::new(SAMPLE_RATE as usize); // 1s Buffer
         let (mut iq_producer_rx, mut iq_consumer) = rb.split();
 
@@ -106,10 +128,10 @@ impl SdrappCore {
         }
 
         let state_rx = Arc::clone(&self.state);
+        let live_device_rx = Arc::clone(&self.live_device);
 
         // Empfänger-Thread: SoapySDR → Ring Buffer
         thread::spawn(move || {
-            let _device = device; // hält Device am Leben (und damit Stream)
             let mut rx_stream = rx_stream;
             if let Err(e) = rx_stream.activate(None) {
                 eprintln!("Stream aktivieren fehlgeschlagen: {}", e);
@@ -130,6 +152,9 @@ impl SdrappCore {
                 }
             }
             let _ = rx_stream.deactivate(None);
+            // Gerät freigeben wenn Thread endet
+            let mut ld = live_device_rx.lock().unwrap();
+            *ld = None;
         });
 
         // DSP-Thread: liest IQ aus Ring Buffer, rechnet FFT + Demod

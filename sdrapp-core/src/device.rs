@@ -49,6 +49,9 @@ impl SdrDevice {
 
     pub fn sample_rate(&self) -> f64 { self.sample_rate }
 
+    /// Gibt das innere soapysdr::Device zurück (für Live-Tuning).
+    pub fn into_inner(self) -> soapysdr::Device { self.device }
+
     /// Erstellt einen RX-Stream für IQ-Samples.
     pub fn rx_stream(&self) -> Result<soapysdr::RxStream<Complex<f32>>, soapysdr::Error> {
         self.device.rx_stream(&[0])
