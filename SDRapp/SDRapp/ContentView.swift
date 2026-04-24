@@ -11,12 +11,14 @@ struct ContentView: View {
     @Environment(AppState.self) var appState
 
     var body: some View {
-        NavigationSplitView {
+        HSplitView {
             SidebarView()
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240, max: 280)
-        } detail: {
+                .frame(minWidth: 200, idealWidth: 220, maxWidth: 260)
+                .background(Theme.bgSurface)
             SpectrumContainerView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .background(Theme.bgDeep)
         .onAppear {
             appState.refreshDevices()
         }
