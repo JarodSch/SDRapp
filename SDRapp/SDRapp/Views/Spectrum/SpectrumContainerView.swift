@@ -9,15 +9,19 @@ struct SpectrumContainerView: View {
             FrequencyBarView()
                 .frame(height: 44)
             SpectrumMetalView(fftData: appState.fftData)
-                .frame(maxWidth: .infinity, maxHeight: 200)
+                .frame(maxWidth: .infinity, maxHeight: 180)
+                .overlay(alignment: .bottom) {
+                    Rectangle()
+                        .fill(Theme.borderSubtle)
+                        .frame(height: 1)
+                }
             WaterfallMetalView(fftData: appState.fftData)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Color(red: 0.05, green: 0.05, blue: 0.08))
+        .background(Theme.bgDeep)
     }
 }
 
-// MTKView-Wrapper für SwiftUI
 struct SpectrumMetalView: NSViewRepresentable {
     var fftData: [Float]
 
