@@ -9,9 +9,17 @@ import SwiftUI
 
 @main
 struct SDRappApp: App {
+    @State private var appState = AppState()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(appState)
+                .frame(minWidth: 900, minHeight: 600)
+        }
+        .windowStyle(.titleBar)
+        .commands {
+            CommandGroup(replacing: .newItem) {}
         }
     }
 }
