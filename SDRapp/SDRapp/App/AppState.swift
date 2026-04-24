@@ -21,7 +21,11 @@ final class AppState {
     private var fftTimer: Timer?
 
     func refreshDevices() {
-        availableDevices = core.listDevices()
+        Task.detached { [weak self] in
+            guard let self else { return }
+            let devices = self.core.listDevices()
+            await MainActor.run { self.availableDevices = devices }
+        }
     }
 
     func startReceiving() {
