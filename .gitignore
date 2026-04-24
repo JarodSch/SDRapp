@@ -22,6 +22,9 @@ DerivedData/
 *.dSYM.zip
 *.dSYM
 
+# Build artifacts (generiert durch cargo build)
+*.a
+
 # Rust
 target/
 
