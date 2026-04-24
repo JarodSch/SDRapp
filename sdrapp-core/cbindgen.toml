@@ -1,0 +1,3 @@
+language = "C"
+include_guard = "SDRAPP_CORE_H"
+documentation = false

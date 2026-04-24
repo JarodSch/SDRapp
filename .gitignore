@@ -24,7 +24,6 @@ DerivedData/
 
 # Rust
 target/
-Cargo.lock
 
 # Swift Package Manager
 .build/
