@@ -19,7 +19,7 @@ final class SpectrumRenderer: NSObject, MTKViewDelegate {
         self.device = device
         self.commandQueue = queue
         mtkView.device = device
-        mtkView.clearColor = MTLClearColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1)
+        mtkView.clearColor = MTLClearColor(red: 0.031, green: 0.039, blue: 0.024, alpha: 1) // #080a06
         mtkView.colorPixelFormat = .bgra8Unorm
 
         guard let library = device.makeDefaultLibrary() else { return nil }
