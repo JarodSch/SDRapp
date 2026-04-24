@@ -13,8 +13,9 @@ Icon
 .com.apple.timemachine.donotpresent
 
 # Xcode
-*.xcodeproj/xcuserdata/
-*.xcworkspace/xcuserdata/
+xcuserdata/
+**/*.xcodeproj/xcuserdata/
+**/*.xcworkspace/xcuserdata/
 *.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 build/
 DerivedData/
