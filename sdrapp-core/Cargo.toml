@@ -1,0 +1,21 @@
+[package]
+name = "sdrapp-core"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "sdrapp_core"
+crate-type = ["staticlib"]
+
+[dependencies]
+soapysdr = "0.3"
+rustfft = "6"
+ringbuf = "0.4"
+cpal = "0.15"
+num-complex = "0.4"
+
+[build-dependencies]
+cbindgen = "0.27"
+
+[dev-dependencies]
+approx = "0.5"
