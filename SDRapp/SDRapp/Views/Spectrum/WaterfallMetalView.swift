@@ -1,19 +1,26 @@
 import SwiftUI
 import MetalKit
 
-// Stub — wird in Task 13 durch vollständigen Wasserfall-Renderer ersetzt
 struct WaterfallMetalView: NSViewRepresentable {
     var fftData: [Float]
 
     func makeNSView(context: Context) -> MTKView {
         let view = MTKView()
-        view.clearColor = MTLClearColor(red: 0.05, green: 0.05, blue: 0.08, alpha: 1)
-        view.isPaused = true
+        view.preferredFramesPerSecond = 30
+        view.isPaused = false
         view.enableSetNeedsDisplay = false
+        context.coordinator.renderer = WaterfallRenderer(mtkView: view)
+        view.delegate = context.coordinator.renderer
         return view
     }
 
-    func updateNSView(_ view: MTKView, context: Context) {}
+    func updateNSView(_ view: MTKView, context: Context) {
+        context.coordinator.renderer?.fftData = fftData
+    }
+
     func makeCoordinator() -> Coordinator { Coordinator() }
-    final class Coordinator {}
+
+    final class Coordinator {
+        var renderer: WaterfallRenderer?
+    }
 }
