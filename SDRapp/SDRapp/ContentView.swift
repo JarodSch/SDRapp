@@ -19,7 +19,6 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .ignoresSafeArea()
-        .background(WindowConfigurator())
         .background(Theme.bgDeep)
         .onAppear {
             appState.refreshDevices()
