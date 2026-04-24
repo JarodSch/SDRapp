@@ -12,17 +12,6 @@ use crate::device::{DeviceInfo, GainElementInfo};
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-/// Opaque-Pointer für Swift
-#[repr(C)]
-#[allow(dead_code)]
-pub struct SdrappCoreOpaque {
-    _private: [u8; 0],
-}
-
-// cbindgen:ignore
-#[allow(dead_code)]
-static mut CORE_INSTANCE: Option<Box<SdrappCore>> = None;
-
 #[no_mangle]
 pub extern "C" fn sdrapp_create() -> *mut SdrappCore {
     Box::into_raw(Box::new(SdrappCore::new()))
@@ -138,6 +127,7 @@ pub unsafe extern "C" fn sdrapp_free_gain_list(ptr: *mut GainListC) {
     if ptr.is_null() { return; }
     let list = Box::from_raw(ptr);
     if !list.items.is_null() {
+        // Safety: shrink_to_fit() vor forget() garantiert capacity == len
         let items = Vec::from_raw_parts(list.items, list.count, list.count);
         for item in &items {
             if !item.name.is_null() { drop(CString::from_raw(item.name)); }
@@ -183,6 +173,7 @@ pub unsafe extern "C" fn sdrapp_free_device_list(ptr: *mut DeviceListC) {
     if ptr.is_null() { return; }
     let list = Box::from_raw(ptr);
     if !list.items.is_null() {
+        // Safety: shrink_to_fit() vor forget() garantiert capacity == len
         let items = Vec::from_raw_parts(list.items, list.count, list.count);
         for item in &items {
             if !item.label.is_null() { drop(CString::from_raw(item.label)); }

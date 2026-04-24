@@ -2,6 +2,7 @@ import SwiftUI
 import Observation
 
 @Observable
+@MainActor
 final class AppState {
     // Gerät
     var availableDevices: [SDRDeviceInfo] = []
@@ -22,18 +23,20 @@ final class AppState {
     private var fftTimer: Timer?
 
     func refreshDevices() {
-        Task.detached { [weak self] in
-            guard let self else { return }
-            let devices = self.core.listDevices()
-            await MainActor.run { self.availableDevices = devices }
+        let core = self.core
+        Task.detached {
+            let devices = core.listDevices()
+            await MainActor.run { [weak self] in
+                self?.availableDevices = devices
+            }
         }
     }
 
     func selectDevice(_ args: String?) {
         selectedDeviceArgs = args
         gainElements = []
-        if args != nil {
-            core.setDevice(args!)
+        if let args {
+            core.setDevice(args)
             refreshGainElements()
         }
     }
@@ -42,7 +45,6 @@ final class AppState {
         guard let args = selectedDeviceArgs else { return }
         core.setDevice(args)
         core.setFrequency(frequencyHz)
-        // Per-Element-Gains anwenden falls gesetzt, sonst Overall-Gain
         if gainElements.isEmpty {
             core.setGain(gainDb)
         } else {
@@ -77,10 +79,12 @@ final class AppState {
     }
 
     func refreshGainElements() {
-        Task.detached { [weak self] in
-            guard let self else { return }
-            let elements = self.core.listGainElements()
-            await MainActor.run { self.gainElements = elements }
+        let core = self.core
+        Task.detached {
+            let elements = core.listGainElements()
+            await MainActor.run { [weak self] in
+                self?.gainElements = elements
+            }
         }
     }
 
@@ -90,10 +94,15 @@ final class AppState {
     }
 
     private func startFFTPolling() {
-        fftTimer = Timer.scheduledTimer(withTimeInterval: 1.0/30.0, repeats: true) { [weak self] _ in
+        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             guard let self else { return }
-            self.fftData = self.core.getFFT()
+            // Timer-Callback kann auf beliebigem Thread feuern — explizit auf MainActor dispatchen
+            DispatchQueue.main.async {
+                self.fftData = self.core.getFFT()
+            }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        fftTimer = timer
     }
 
     private func stopFFTPolling() {

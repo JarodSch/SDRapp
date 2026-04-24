@@ -81,8 +81,9 @@ final class WaterfallRenderer: NSObject, MTKViewDelegate {
             enc.setBuffer(fftBuffer, offset: 0, index: 0)
             enc.setBytes(&row, length: 4, index: 1)
             enc.setBytes(&count, length: 4, index: 2)
+            let threadWidth = computePipeline.threadExecutionWidth
             let threads = MTLSize(width: fftSize, height: 1, depth: 1)
-            let groups  = MTLSize(width: 1, height: 1, depth: 1)
+            let groups  = MTLSize(width: threadWidth, height: 1, depth: 1)
             enc.dispatchThreads(threads, threadsPerThreadgroup: groups)
             enc.endEncoding()
         }

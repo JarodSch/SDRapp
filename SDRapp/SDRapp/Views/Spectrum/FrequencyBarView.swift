@@ -62,11 +62,9 @@ struct FrequencyBarView: View {
     }
 
     private func commitFrequency() {
-        if let mhz = Double(inputText.replacingOccurrences(of: ",", with: ".")) {
-            let hz = UInt64(mhz * 1_000_000)
-            if hz >= 1_000 && hz <= 6_000_000_000 {
-                appState.tuneFrequency(hz)
-            }
+        if let mhz = Double(inputText.replacingOccurrences(of: ",", with: ".")),
+           mhz > 0, mhz <= 6000 {
+            appState.tuneFrequency(UInt64(mhz * 1_000_000))
         }
         isEditing = false
     }

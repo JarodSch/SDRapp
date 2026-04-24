@@ -25,7 +25,10 @@ final class SDRCore {
     private let ptr: OpaquePointer
 
     init() {
-        ptr = sdrapp_create()!
+        guard let p = sdrapp_create() else {
+            fatalError("SDRCore: sdrapp_create() returned nil — Speichermangel?")
+        }
+        ptr = p
     }
 
     deinit {

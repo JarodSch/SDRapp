@@ -17,6 +17,7 @@ const AUDIO_RATE: u32 = 44_100;
 struct SharedState {
     fft_data: [f32; FFT_SIZE],
     is_running: bool,
+    demod_mode: DemodMode,
 }
 
 pub struct SdrappCore {
@@ -36,6 +37,7 @@ impl SdrappCore {
             state: Arc::new(Mutex::new(SharedState {
                 fft_data: [-120.0; FFT_SIZE],
                 is_running: false,
+                demod_mode: DemodMode::Wbfm,
             })),
             live_device: Arc::new(Mutex::new(None)),
             device_args: None,
@@ -116,6 +118,9 @@ impl SdrappCore {
 
     pub fn set_demod(&mut self, mode: DemodMode) {
         self.demod_mode = mode;
+        if let Ok(mut s) = self.state.lock() {
+            s.demod_mode = mode;
+        }
     }
 
     /// Kopiert aktuelle FFT-Daten in out_buf. Gibt FFT_SIZE zurück.
@@ -168,10 +173,11 @@ impl SdrappCore {
         let state = Arc::clone(&self.state);
         let demod_mode = self.demod_mode;
 
-        // is_running VOR Spawn setzen damit der Thread beim ersten Check true liest
+        // is_running und demod_mode VOR Spawn setzen
         {
             let mut state_guard = self.state.lock().unwrap();
             state_guard.is_running = true;
+            state_guard.demod_mode = self.demod_mode;
         }
 
         let state_rx = Arc::clone(&self.state);
@@ -208,6 +214,7 @@ impl SdrappCore {
         thread::spawn(move || {
             let mut fft = FftProcessor::new();
             let mut demod = Demodulator::new(demod_mode, SAMPLE_RATE as f32);
+            let mut current_mode = demod_mode;
             let mut audio = match AudioOutput::new(AUDIO_RATE) {
                 Ok(a) => a,
                 Err(e) => { eprintln!("Audio-Init fehlgeschlagen: {}", e); return; }
@@ -217,12 +224,19 @@ impl SdrappCore {
             let mut audio_buf: Vec<f32> = Vec::with_capacity(FFT_SIZE);
 
             loop {
-                {
+                let (running, mode) = {
                     let s = state.lock().unwrap();
-                    if !s.is_running { break; }
+                    (s.is_running, s.demod_mode)
+                };
+                if !running { break; }
+                // Demodulator live wechseln wenn Modus geändert wurde
+                if mode != current_mode {
+                    demod = Demodulator::new(mode, SAMPLE_RATE as f32);
+                    current_mode = mode;
                 }
 
                 let available = iq_consumer.occupied_len();
+
                 if available < FFT_SIZE {
                     thread::sleep(std::time::Duration::from_millis(1));
                     continue;

@@ -34,7 +34,9 @@ struct SpectrumContainerView: View {
                         if newHz > 0 { appState.tuneFrequency(UInt64(newHz)) }
                     },
                     onScroll: { deltaX in
-                        // 1 Scroll-Einheit ≈ 50 kHz
+                        // deltaX > 0 = Trackpad-Swipe nach rechts
+                        // Subtraktion: Scrollen rechts → Frequenz sinkt (Spektrum verschiebt sich
+                        // nach rechts, wie beim Scrollen durch ein breites Spektrogramm)
                         let hz = Int64(deltaX * 50_000)
                         let newHz = Int64(appState.frequencyHz) - hz
                         if newHz > 0 { appState.tuneFrequency(UInt64(newHz)) }
