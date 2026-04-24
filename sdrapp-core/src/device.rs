@@ -10,7 +10,7 @@ pub struct DeviceInfo {
 
 pub struct SdrDevice {
     device: soapysdr::Device,
-    pub sample_rate: f64,
+    sample_rate: f64,
 }
 
 impl SdrDevice {
@@ -23,7 +23,7 @@ impl SdrDevice {
                 args: args.to_string(),
                 driver: args.get("driver").unwrap_or("unknown").to_string(),
             }).collect(),
-            Err(_) => vec![],
+            Err(e) => { eprintln!("SoapySDR enumerate error: {e}"); vec![] }
         }
     }
 
@@ -35,7 +35,7 @@ impl SdrDevice {
 
     /// Konfiguriert Frequenz, Gain und Sample-Rate.
     pub fn configure(
-        &self,
+        &mut self,
         frequency_hz: u64,
         gain_db: f64,
         sample_rate: f64,
@@ -43,8 +43,11 @@ impl SdrDevice {
         self.device.set_sample_rate(Rx, 0, sample_rate)?;
         self.device.set_frequency(Rx, 0, frequency_hz as f64, ())?;
         self.device.set_gain(Rx, 0, gain_db)?;
+        self.sample_rate = sample_rate;
         Ok(())
     }
+
+    pub fn sample_rate(&self) -> f64 { self.sample_rate }
 
     /// Erstellt einen RX-Stream für IQ-Samples.
     pub fn rx_stream(&self) -> Result<soapysdr::RxStream<Complex<f32>>, soapysdr::Error> {
