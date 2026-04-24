@@ -110,6 +110,7 @@ struct SidebarView: View {
             RoundedRectangle(cornerRadius: 2)
                 .stroke(Theme.amber, lineWidth: 1)
         )
+        .contentShape(Rectangle())
         .disabled(appState.selectedDeviceArgs == nil && !running)
     }
 

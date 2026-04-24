@@ -55,6 +55,7 @@ struct DevicePickerView: View {
                         .stroke(Theme.border, lineWidth: 1)
                 )
                 .cornerRadius(2)
+                .contentShape(Rectangle())
         }
     }
 }

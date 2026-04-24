@@ -26,5 +26,6 @@ struct ModePickerView: View {
                 RoundedRectangle(cornerRadius: 2)
                     .stroke(active ? Theme.amber : Theme.border, lineWidth: 1)
             )
+            .contentShape(Rectangle())
     }
 }
